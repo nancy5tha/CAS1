@@ -1,0 +1,30 @@
+<h2>Report Card - {{ student.name }} (Grade {{ student.grade }})</h2>
+<h3>{{ term.name }} - {{ term.year }}</h3>
+
+<table border="1">
+  <tr>
+    <th>Subject</th>
+    <th>Project</th>
+    <th>Classwork</th>
+    <th>Viva</th>
+    <th>MCQs</th>
+    <th>Homework</th>
+    <th>Total</th>
+  </tr>
+  {% for a in assessments %}
+    <tr>
+      <td>{{ a.subject.name }}</td>
+      <td>{{ a.project }}</td>
+      <td>{{ a.classwork }}</td>
+      <td>{{ a.viva }}</td>
+      <td>{{ a.mcqs }}</td>
+      <td>{{ a.homework }}</td>
+      <td>{{ a.total }}</td>
+    </tr>
+  {% endfor %}
+</table>
+
+<p><strong>Grand Total:</strong> {{ grand_total }}</p>
+<p><strong>Average:</strong> {{ average }}</p>
+
+<button onclick="window.print()">Print Report Card</button>

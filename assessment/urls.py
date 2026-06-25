@@ -1,0 +1,38 @@
+from django.urls import path
+from django.contrib.auth import views as auth_views
+from . import views
+
+urlpatterns = [
+    # Authentication
+    path(
+        "login/", auth_views.LoginView.as_view(template_name="login.html"), name="login"
+    ),
+    path(
+        "logout/",
+        auth_views.LogoutView.as_view(next_page="/assessment/login/"),
+        name="logout",
+    ),
+    # Dashboards
+    path("dashboard/", views.dashboard, name="dashboard"),
+    path("admin-dashboard/", views.admin_dashboard, name="admin_dashboard"),
+    path("teacher-dashboard/", views.teacher_dashboard, name="teacher_dashboard"),
+    # Admin-only
+    path("manage-years/", views.manage_years, name="manage_years"),
+    path("manage-terms/", views.manage_terms, name="manage_terms"),
+    path("manage-students/", views.manage_students, name="manage_students"),
+    # Teacher-only
+    path("add-assessment/", views.add_assessment, name="add_assessment"),
+    # Reports
+    # ✅ Single student report card
+    path(
+        "report-card/student/<int:student_id>/<int:term_id>/",
+        views.student_report_card,
+        name="student_report_card",
+    ),
+    # ✅ Class report card
+    path(
+        "report-card/class/<int:term_id>/<str:grade>/<str:sec>/<int:subject_id>/",
+        views.class_report_card,
+        name="class_report_card",
+    ),
+]

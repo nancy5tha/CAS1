@@ -1,0 +1,99 @@
+{% load custom_filters %}
+<h2>Add Assessment</h2>
+<form method="post">
+    {% csrf_token %}
+
+    <select name="year">
+  {% for year in years %}
+    <option value="{{ year.id }}" {% if selected_year and selected_year.id == year.id %}selected{% endif %}>
+      {{ year.year }}
+    </option>
+  {% endfor %}
+</select>
+
+<select name="term">
+  {% for term in terms %}
+    <option value="{{ term.id }}" {% if selected_term and selected_term.id == term.id %}selected{% endif %}>
+      {{ term.name }}
+    </option>
+  {% endfor %}
+</select>
+
+<select name="subject">
+  {% for subject in subjects %}
+    <option value="{{ subject.id }}" {% if selected_subject and selected_subject.id == subject.id %}selected{% endif %}>
+      {{ subject.name }}
+    </option>
+  {% endfor %}
+</select>
+
+<select name="grade">
+  {% for g in grades %}
+    <option value="{{ g }}" {% if selected_grade == g %}selected{% endif %}>{{ g }}</option>
+  {% endfor %}
+</select>
+
+<select name="sec">
+  {% for s in secs %}
+    <option value="{{ s }}" {% if selected_sec == s %}selected{% endif %}>{{ s }}</option>
+  {% endfor %}
+</select>
+
+
+    <button type="submit">Load Students</button>
+
+    {% if students %}
+    <table border="1">
+        <tr>
+            <th>Student</th>
+            <th>Viva</th>
+            <th>Project</th>
+            <th>Homework</th>
+            <th>MCQs</th>
+            <th>Classwork</th>
+            <th>Total</th>
+        </tr>
+        {% for student in students %}
+        {% with assessment=assessment_map|get_item:student.id %}
+        <tr>
+            <td>{{ student.name }}</td>
+            <td><input type="number" name="viva_{{ student.id }}" value="{{ assessment.viva|default:0 }}"
+                    oninput="updateTotal({{ student.id }})"></td>
+            <td><input type="number" name="project_{{ student.id }}" value="{{ assessment.project|default:0 }}"
+                    oninput="updateTotal({{ student.id }})"></td>
+            <td><input type="number" name="homework_{{ student.id }}" value="{{ assessment.homework|default:0 }}"
+                    oninput="updateTotal({{ student.id }})"></td>
+            <td><input type="number" name="mcqs_{{ student.id }}" value="{{ assessment.mcqs|default:0 }}"
+                    oninput="updateTotal({{ student.id }})"></td>
+            <td><input type="number" name="classwork_{{ student.id }}" value="{{ assessment.classwork|default:0 }}"
+                    oninput="updateTotal({{ student.id }})"></td>
+            <td><span id="total_{{ student.id }}">{{ assessment.total|default:0 }}</span></td>
+        </tr>
+        {% endwith %}
+        {% endfor %}
+    </table>
+    {% if students %}
+    <button type="submit" name="save_all">Save All</button>
+
+    {% if selected_term and selected_subject and selected_grade and selected_sec %}
+    <a href="{% url 'class_report_card' selected_term.id selected_grade selected_sec selected_subject.id %}"
+        target="_blank">
+        <button type="button">View Report Card</button>
+    </a>
+    {% endif %}
+    {% endif %} 
+    {% endif %}
+</form>
+
+<script>
+    function updateTotal(studentId) {
+        let viva = parseInt(document.querySelector(`[name='viva_${studentId}']`).value) || 0;
+        let project = parseInt(document.querySelector(`[name='project_${studentId}']`).value) || 0;
+        let homework = parseInt(document.querySelector(`[name='homework_${studentId}']`).value) || 0;
+        let mcqs = parseInt(document.querySelector(`[name='mcqs_${studentId}']`).value) || 0;
+        let classwork = parseInt(document.querySelector(`[name='classwork_${studentId}']`).value) || 0;
+
+        let total = viva + project + homework + mcqs + classwork;
+        document.getElementById(`total_${studentId}`).innerText = total;
+    }
+</script>

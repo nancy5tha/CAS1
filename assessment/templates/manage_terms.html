@@ -1,0 +1,20 @@
+<h2>Manage Exam Terms</h2>
+<ul>
+  {% for term in terms %}
+    <li>{{ term.name }} ({{ term.year.year }})</li>
+  {% endfor %}
+</ul>
+
+<h3>Add New Term</h3>
+<form method="post">
+  {% csrf_token %}
+  <input type="text" name="name" placeholder="Enter Term Name">
+  <select name="year">
+    {% for year in years %}
+      <option value="{{ year.id }}">{{ year.year }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Add Term</button>
+</form>
+
+<a href="{% url 'admin_dashboard' %}">Back to Dashboard</a>

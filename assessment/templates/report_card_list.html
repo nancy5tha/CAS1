@@ -1,0 +1,27 @@
+{% load custom_filters %}
+<h2>Report Card - {{ subject.name }} ({{ term.name }})</h2>
+
+<table border="1">
+  <tr>
+    <th>Student</th>
+    <th>Viva</th>
+    <th>Project</th>
+    <th>Homework</th>
+    <th>MCQs</th>
+    <th>Classwork</th>
+    <th>Total</th>
+  </tr>
+  {% for student in students %}
+    {% with assessment=assessment_map|get_item:student.id %}
+    <tr>
+      <td>{{ student.name }}</td>
+      <td>{{ assessment.viva|default:"-" }}</td>
+      <td>{{ assessment.project|default:"-" }}</td>
+      <td>{{ assessment.homework|default:"-" }}</td>
+      <td>{{ assessment.mcqs|default:"-" }}</td>
+      <td>{{ assessment.classwork|default:"-" }}</td>
+      <td>{{ assessment.total|default:"-" }}</td>
+    </tr>
+    {% endwith %}
+  {% endfor %}
+</table>

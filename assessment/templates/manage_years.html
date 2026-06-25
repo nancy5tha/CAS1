@@ -1,0 +1,15 @@
+<h2>Manage Academic Years</h2>
+<ul>
+  {% for year in years %}
+    <li>{{ year.year }}</li>
+  {% endfor %}
+</ul>
+
+<h3>Add New Year</h3>
+<form method="post">
+  {% csrf_token %}
+  <input type="text" name="year" placeholder="Enter Year">
+  <button type="submit">Add Year</button>
+</form>
+
+<a href="{% url 'admin_dashboard' %}">Back to Dashboard</a>

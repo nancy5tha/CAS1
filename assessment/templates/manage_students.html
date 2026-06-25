@@ -1,0 +1,18 @@
+<h2>Manage Students</h2>
+<ul>
+  {% for student in students %}
+    <li>{{ student.name }} (Grade {{ student.grade }})</li>
+  {% endfor %}
+</ul>
+
+<h3>Add New Student</h3>
+<form method="post">
+  {% csrf_token %}
+  <input type="text" name="name" placeholder="Enter Student Name">
+  <input type="text" name="roll" placeholder="Enter Student Roll Number">
+  <input type="text" name="grade" placeholder="Enter Grade">
+  <input type="text" name="sec" placeholder="Enter Section">
+  <button type="submit">Add Student</button>
+</form>
+
+<a href="{% url 'admin_dashboard' %}">Back to Dashboard</a>

@@ -1,0 +1,50 @@
+<h2>Teacher Dashboard</h2>
+<ul>
+  <li><a href="{% url 'add_assessment' %}">Enter Marks</a></li>
+</ul>
+
+<hr>
+
+<form method="get">
+  <label for="grade">Select Class (Grade):</label>
+  <select name="grade" id="grade">
+    {% for g in grades %}
+      <option value="{{ g }}" {% if request.GET.grade == g %}selected{% endif %}>{{ g }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="sec">Select Sec:</label>
+  <select name="sec" id="sec">
+    {% for s in secs %}
+      <option value="{{ s }}" {% if request.GET.sec == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="term">Select Term:</label>
+  <select name="term" id="term">
+    {% for t in terms %}
+      <option value="{{ t.id }}" {% if request.GET.term == t.id|stringformat:"s" %}selected{% endif %}>{{ t.name }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="subject">Select Subject:</label>
+  <select name="subject" id="subject">
+    {% for subj in subjects %}
+      <option value="{{ subj.id }}" {% if request.GET.subject == subj.id|stringformat:"s" %}selected{% endif %}>{{ subj.name }}</option>
+    {% endfor %}
+  </select>
+
+  <button type="submit">Load Report Card</button>
+</form>
+
+{% if request.GET.grade and request.GET.sec and request.GET.term and request.GET.subject %}
+  <a href="{% url 'class_report_card' request.GET.term request.GET.grade request.GET.sec request.GET.subject %}">
+    View/Print Report Cards
+  </a>
+{% endif %}
+
+<hr>
+<form action="{% url 'logout' %}" method="post">
+  {% csrf_token %}
+  <button type="submit">Logout</button>
+</form>

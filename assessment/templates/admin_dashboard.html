@@ -1,0 +1,12 @@
+<h2>Admin Dashboard</h2>
+<ul>
+  <li><a href="{% url 'manage_years' %}">Manage Academic Years</a></li>
+  <li><a href="{% url 'manage_terms' %}">Manage Exam Terms</a></li>
+  <li><a href="{% url 'manage_students' %}">Manage Students</a></li>
+  
+</ul>
+<hr>
+<form action="{% url 'logout' %}" method="post">
+  {% csrf_token %}
+  <button type="submit">Logout</button>
+</form>
