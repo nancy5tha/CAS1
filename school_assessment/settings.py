@@ -34,6 +34,7 @@ ALLOWED_HOSTS = [
 
 CSRF_TRUSTED_ORIGINS = [
     "https://cass-e8cnhjh4dnhndpb6.eastasia-01.azurewebsites.net",
+    "https://cas.edutech.com.np",
 ]
 # Application definition
 
