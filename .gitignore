@@ -1,0 +1,13 @@
+# Virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# SQLite database (optional)
+# Uncomment this if you don't want to commit your local database
+# db.sqlite3
+
+# Environment variables
+.env

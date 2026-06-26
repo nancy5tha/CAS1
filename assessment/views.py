@@ -1,6 +1,14 @@
 from django.shortcuts import render, redirect
-from .models import AcademicYear, Student, Assessment, ExamTerm, Subject, Profile
+from reportlab.lib.pagesizes import A5
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from django.http import HttpResponse
+from .models import AcademicYear, Student, Assessment, ExamTerm, Subject, Profile, ClassSubject
 from django.contrib.auth.decorators import login_required
+import csv
+from io import TextIOWrapper
+from django.core.paginator import Paginator
+from django.db.models import Q
 
 
 def dashboard(request):
@@ -11,8 +19,31 @@ def dashboard(request):
         return redirect("teacher_dashboard")
 
 
+@login_required
 def admin_dashboard(request):
-    return render(request, "admin_dashboard.html")
+    terms = ExamTerm.objects.all()
+    grades = Student.objects.values_list("grade", flat=True).distinct()
+    secs = Student.objects.values_list("sec", flat=True).distinct()
+
+    if (
+        request.GET.get("term_id")
+        and request.GET.get("grade")
+        and request.GET.get("sec")
+    ):
+        term_id = request.GET["term_id"]
+        grade = request.GET["grade"]
+        sec = request.GET["sec"]
+        return redirect("class_report_card_pdf", term_id=term_id, grade=grade, sec=sec)
+
+    return render(
+        request,
+        "admin_dashboard.html",
+        {
+            "terms": terms,
+            "grades": grades,
+            "secs": secs,
+        },
+    )
 
 
 @login_required
@@ -32,7 +63,6 @@ def teacher_dashboard(request):
             "subjects": subjects,
         },
     )
-
 
 
 # ✅ Single student report card
@@ -75,76 +105,159 @@ def manage_terms(request):
     return render(request, "manage_terms.html", {"terms": terms})
 
 
+
+
 @login_required
 def manage_students(request):
     profile = Profile.objects.get(user=request.user)
     if profile.role != "Admin":
         return redirect("teacher_dashboard")
-    students = Student.objects.all()
-    return render(request, "manage_students.html", {"students": students})
+    
+    # ✅ Bulk CSV Upload
+    if request.method == "POST" and "upload_csv" in request.POST:
+        csv_file = request.FILES.get("csv_file")
+        if csv_file:
+            # Decode file to text
+            file_data = TextIOWrapper(csv_file.file, encoding="utf-8")
+            reader = csv.DictReader(file_data)
+
+            for row in reader:
+                name = row.get("name")
+                roll = row.get("roll")
+                grade = row.get("grade")
+                sec = row.get("sec")
+
+                if name and roll and grade and sec:
+                    Student.objects.update_or_create(
+                        roll=roll,
+                        grade=grade,
+                        sec=sec,
+                        defaults={"name": name}
+                    )
+
+            return redirect("manage_students")
+
+    # ✅ Add new student if POST
+    if request.method == "POST":
+        name = request.POST.get("name")
+        roll = request.POST.get("roll")
+        grade = request.POST.get("grade")
+        sec = request.POST.get("sec")
+
+        if name and roll and grade and sec:
+            Student.objects.create(
+                name=name,
+                roll=roll,
+                grade=grade,
+                sec=sec
+            )
+            return redirect("manage_students")  # refresh page after adding
+
+    # ✅ Search filter
+    query = request.GET.get("search")
+    students_list = Student.objects.all().order_by("grade", "sec", "roll")
+
+    if query:
+        students_list = students_list.filter(
+            Q(name__icontains=query) | Q(roll__icontains=query) | Q(grade__icontains=query) | Q(sec__icontains=query)
+        )
+
+    # ✅ Pagination
+    paginator = Paginator(students_list, 10)  # 20 students per page
+    page_number = request.GET.get("page")
+    students = paginator.get_page(page_number)
+
+    return render(request, "manage_students.html", {"students": students, "query": query})
 
 
 @login_required
 def add_assessment(request):
+
     years = AcademicYear.objects.all()
     terms = ExamTerm.objects.all()
-    subjects = Subject.objects.all()
     grades = Student.objects.values_list("grade", flat=True).distinct()
     secs = Student.objects.values_list("sec", flat=True).distinct()
 
     students = None
     assessment_map = {}
+    subjects = Subject.objects.none()
 
-    # Initialize variables so they exist on GET
     year = None
     term = None
-    subject = None
     grade = None
     sec = None
+    selected_subject = None
 
     if request.method == "POST":
+
         year_id = request.POST.get("year")
         term_id = request.POST.get("term")
-        subject_id = request.POST.get("subject")
         grade = request.POST.get("grade")
         sec = request.POST.get("sec")
+        subject_id = request.POST.get("subject")
 
-        if year_id and term_id and subject_id and grade and sec:
+        # YEAR
+        if year_id:
             year = AcademicYear.objects.get(id=year_id)
+
+        # TERM
+        if term_id:
             term = ExamTerm.objects.get(id=term_id)
-            subject = Subject.objects.get(id=subject_id)
 
-            # Save marks
-            if "save_all" in request.POST:
-                students = Student.objects.filter(grade=grade, sec=sec)
-                for student in students:
-                    viva = int(request.POST.get(f"viva_{student.id}", 0))
-                    project = int(request.POST.get(f"project_{student.id}", 0))
-                    homework = int(request.POST.get(f"homework_{student.id}", 0))
-                    mcqs = int(request.POST.get(f"mcqs_{student.id}", 0))
-                    classwork = int(request.POST.get(f"classwork_{student.id}", 0))
+        # SUBJECTS (GRADE wise)
+        if grade:
+            subjects = Subject.objects.filter(grade=grade)
 
-                    Assessment.objects.update_or_create(
-                        student=student,
-                        year=year,
-                        term=term,
-                        subject=subject,
-                        defaults={
-                            "viva": viva,
-                            "project": project,
-                            "homework": homework,
-                            "mcqs": mcqs,
-                            "classwork": classwork,
-                        },
-                    )
-                return redirect("teacher_dashboard")
-
-            # Load students + existing marks
-            students = Student.objects.filter(grade=grade, sec=sec)
-            assessments = Assessment.objects.filter(
-                year=year, term=term, subject=subject, student__in=students
+        # STUDENTS
+        if grade and sec:
+            students = Student.objects.filter(
+                grade=grade,
+                sec=sec
             )
-            assessment_map = {a.student_id: a for a in assessments}
+
+        # SELECTED SUBJECT
+        if subject_id:
+            selected_subject = Subject.objects.get(id=subject_id)
+
+        # SAVE DATA
+        if (
+            "save_all" in request.POST
+            and students
+            and selected_subject
+            and year
+            and term
+        ):
+
+            for student in students:
+
+                Assessment.objects.update_or_create(
+                    student=student,
+                    year=year,
+                    term=term,
+                    subject=selected_subject,
+                    defaults={
+                        "viva": int(request.POST.get(f"viva_{student.id}_{selected_subject.id}", 0) or 0),
+                        "project": int(request.POST.get(f"project_{student.id}_{selected_subject.id}", 0) or 0),
+                        "homework": int(request.POST.get(f"homework_{student.id}_{selected_subject.id}", 0) or 0),
+                        "mcqs": int(request.POST.get(f"mcqs_{student.id}_{selected_subject.id}", 0) or 0),
+                        "classwork": int(request.POST.get(f"classwork_{student.id}_{selected_subject.id}", 0) or 0),
+                    }
+                )
+
+        # LOAD EXISTING MARKS (IMPORTANT FIX)
+        if students and selected_subject and year and term:
+
+            assessments = Assessment.objects.filter(
+                student__in=students,
+                subject=selected_subject,
+                year=year,
+                term=term
+            )
+
+            assessment_map = {
+                a.student_id: a
+                for a in assessments
+            }
 
     return render(
         request,
@@ -152,32 +265,42 @@ def add_assessment(request):
         {
             "years": years,
             "terms": terms,
-            "subjects": subjects,
             "grades": grades,
             "secs": secs,
+            "subjects": subjects,
             "students": students,
             "assessment_map": assessment_map,
             "selected_year": year,
             "selected_term": term,
-            "selected_subject": subject,
             "selected_grade": grade,
             "selected_sec": sec,
-        },
+            "selected_subject": selected_subject,
+        }
     )
-
-
 
 # ✅ Class report card
 @login_required
 def class_report_card(request, term_id, grade, sec, subject_id):
+
     term = ExamTerm.objects.get(id=term_id)
     subject = Subject.objects.get(id=subject_id)
 
-    students = Student.objects.filter(grade=grade, sec=sec)
-    assessments = Assessment.objects.filter(
-        term=term, subject=subject, student__in=students
+    students = Student.objects.filter(
+        grade=grade,
+        sec=sec
     )
-    assessment_map = {a.student_id: a for a in assessments}
+
+    assessments = Assessment.objects.filter(
+        term=term,
+        subject=subject,
+        student__in=students
+    )
+
+    # 🔥 IMPORTANT FIX: safe key mapping
+    assessment_map = {}
+
+    for a in assessments:
+        assessment_map[a.student_id] = a
 
     return render(
         request,
@@ -187,5 +310,143 @@ def class_report_card(request, term_id, grade, sec, subject_id):
             "subject": subject,
             "students": students,
             "assessment_map": assessment_map,
-        },
+        }
     )
+
+def class_report_card_pdf(request, term_id, grade, sec):
+    term = ExamTerm.objects.get(id=term_id)
+    students = Student.objects.filter(grade=grade, sec=sec)
+    # class_subjects = ClassSubject.objects.filter(grade=grade).select_related("subject")
+    subjects = Subject.objects.filter(grade=grade)
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = f'inline; filename="report_card_{grade}{sec}.pdf"'
+
+    p = canvas.Canvas(response, pagesize=A5)
+    width, height = A5
+
+    for student in students:
+        # Header
+        p.setFont("Helvetica-Bold", 12)
+        p.drawCentredString(width / 2, height - 40, "Ujjwal Shishu Niketan Academy")
+        p.setFont("Helvetica", 9)
+        p.drawCentredString(width / 2, height - 55, "Sahidpath, Panga, Kirtipur-5, Kathmandu")
+        p.drawCentredString(width / 2, height - 68, "Phone No.: 4330300, 4333529")
+        p.setFont("Helvetica-Bold", 10)
+        p.drawCentredString(width / 2, height - 85, f"{term.name} Examination - {term.year}")
+        p.setFont("Helvetica", 9)
+        p.drawCentredString(width / 2, height - 98, "CAS (Continuous Assessment System)")
+
+        # Student info
+        p.setFont("Helvetica", 9)
+        p.drawString(40, height - 120, f"Name: {student.name}")
+        p.drawString(200, height - 120, f"Grade: {grade}")
+        p.drawString(300, height - 120, f"Sec: {sec}")
+        p.drawString(350, height - 120, f"Roll No: {student.roll}")
+
+        # Table header
+        y = height - 140
+        p.setFont("Helvetica-Bold", 9)
+        headers = ["S.N", "Subjects", "Full Marks", "MCQ", "Project/Viva", "CW/HW", "Discipline", "Total Marks"]
+        x_positions = [40, 70, 160, 210, 260, 310, 360, 420]
+        for i, header in enumerate(headers):
+            p.drawString(x_positions[i], y, header)
+        y -= 15
+        p.line(35, y + 10, width - 35, y + 10)
+
+        # Table rows
+        p.setFont("Helvetica", 9)
+        sn = 1
+        for subject in subjects:
+            assessment = Assessment.objects.filter(student=student, term=term, subject=subject).first()
+            mcq = assessment.mcqs if assessment else 0
+            viva = assessment.viva if assessment else 0
+            hw = assessment.homework if assessment else 0
+            discipline = assessment.classwork if assessment else 0
+            total = assessment.total if assessment else 0
+
+            row_data = [sn, subject.name, subject.full_marks, mcq, viva, hw, discipline, total]
+            for i, val in enumerate(row_data):
+                p.drawString(x_positions[i], y, str(val))
+            y -= 15
+            sn += 1
+
+        # Signature section
+        p.line(35, y - 10, width - 35, y - 10)
+        p.setFont("Helvetica", 9)
+        p.drawString(50, y - 30, "Guardian Sign")
+        p.drawString(200, y - 30, "School Seal")
+        p.drawString(350, y - 30, "Class Teacher")
+
+        p.showPage()
+
+    p.save()
+    return response
+
+@login_required
+def edit_student(request, student_id):
+    student = Student.objects.get(id=student_id)
+    if request.method == "POST":
+        student.name = request.POST.get("name")
+        student.roll = request.POST.get("roll")
+        student.grade = request.POST.get("grade")
+        student.sec = request.POST.get("sec")
+        student.save()
+        return redirect("manage_students")
+    return render(request, "edit_student.html", {"student": student})
+
+
+@login_required
+def delete_student(request, student_id):
+    student = Student.objects.get(id=student_id)
+    student.delete()
+    return redirect("manage_students")
+
+@login_required
+def manage_subjects(request):
+    profile = Profile.objects.get(user=request.user)
+    if profile.role != "Admin":
+        return redirect("teacher_dashboard")
+
+    # ✅ Add new subject
+    if request.method == "POST":
+        name = request.POST.get("name")
+        grade = request.POST.get("grade")
+        full_marks = request.POST.get("full_marks")
+
+        if name and grade and full_marks:
+            Subject.objects.create(
+                name=name,
+                grade=grade,
+                full_marks=int(full_marks)
+            )
+            return redirect("manage_subjects")
+# ✅ Sort subjects by grade ascending
+    subjects = Subject.objects.all().order_by("grade", "name")
+
+    # ✅ Pagination (10 subjects per page)
+    paginator = Paginator(subjects, 10)
+    page_number = request.GET.get("page")
+    subjects = paginator.get_page(page_number)
+
+    
+    return render(request, "manage_subjects.html", {"subjects": subjects})
+    
+    
+
+@login_required
+def edit_subject(request, subject_id):
+    subject = Subject.objects.get(id=subject_id)
+    if request.method == "POST":
+        subject.name = request.POST.get("name")
+        subject.grade = request.POST.get("grade")
+        subject.full_marks = request.POST.get("full_marks")
+        subject.save()
+        return redirect("manage_subjects")
+    return render(request, "edit_subject.html", {"subject": subject})
+
+@login_required
+def delete_subject(request, subject_id):
+    subject = Subject.objects.get(id=subject_id)
+    subject.delete()
+    return redirect("manage_subjects")

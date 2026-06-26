@@ -3,9 +3,36 @@
   <li><a href="{% url 'manage_years' %}">Manage Academic Years</a></li>
   <li><a href="{% url 'manage_terms' %}">Manage Exam Terms</a></li>
   <li><a href="{% url 'manage_students' %}">Manage Students</a></li>
-  
+  <li><a href="{% url 'manage_subjects' %}">Manage Subjects</a></li>
 </ul>
 <hr>
+
+<h3>Generate Report Card PDF</h3>
+<form method="get" action="">
+  <label>Term:</label>
+  <select name="term_id">
+    {% for term in terms %}
+      <option value="{{ term.id }}">{{ term.name }}</option>
+    {% endfor %}
+  </select>
+
+  <label>Grade:</label>
+  <select name="grade">
+    {% for g in grades %}
+      <option value="{{ g }}">{{ g }}</option>
+    {% endfor %}
+  </select>
+
+  <label>Section:</label>
+  <select name="sec">
+    {% for s in secs %}
+      <option value="{{ s }}">{{ s }}</option>
+    {% endfor %}
+  </select>
+
+  <button type="submit">Generate PDF</button>
+</form>
+
 <form action="{% url 'logout' %}" method="post">
   {% csrf_token %}
   <button type="submit">Logout</button>

@@ -1,18 +1,66 @@
 <h2>Manage Students</h2>
-<ul>
+
+<!-- ✅ Search box -->
+<form method="get">
+  <input type="text" name="search" placeholder="Search by name, roll, grade, or section" value="{{ query }}">
+  <button type="submit">Search</button>
+</form>
+
+<table border="1" cellpadding="5" cellspacing="0">
+  <tr>
+    <th>ID</th>
+    <th>Name</th>
+    <th>Roll</th>
+    <th>Grade</th>
+    <th>Section</th>
+    <th>Actions</th>
+  </tr>
   {% for student in students %}
-    <li>{{ student.name }} (Grade {{ student.grade }})</li>
+  <tr>
+    <td>{{ student.id }}</td>
+    <td>{{ student.name }}</td>
+    <td>{{ student.roll }}</td>
+    <td>{{ student.grade }}</td>
+    <td>{{ student.sec }}</td>
+    <td>
+      <a href="{% url 'edit_student' student.id %}">Edit</a> |
+      <a href="{% url 'delete_student' student.id %}" onclick="return confirm('Are you sure you want to delete this student?');">Delete</a>
+    </td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="6">No students found.</td></tr>
   {% endfor %}
-</ul>
+</table>
+
+<!-- ✅ Pagination controls -->
+<div>
+  {% if students.has_previous %}
+    <a href="?page={{ students.previous_page_number }}{% if query %}&search={{ query }}{% endif %}">Previous</a>
+  {% endif %}
+
+  Page {{ students.number }} of {{ students.paginator.num_pages }}
+
+  {% if students.has_next %}
+    <a href="?page={{ students.next_page_number }}{% if query %}&search={{ query }}{% endif %}">Next</a>
+  {% endif %}
+</div>
 
 <h3>Add New Student</h3>
 <form method="post">
   {% csrf_token %}
-  <input type="text" name="name" placeholder="Enter Student Name">
-  <input type="text" name="roll" placeholder="Enter Student Roll Number">
-  <input type="text" name="grade" placeholder="Enter Grade">
-  <input type="text" name="sec" placeholder="Enter Section">
+  <input type="text" name="name" placeholder="Enter Student Name" required>
+  <input type="text" name="roll" placeholder="Enter Student Roll Number" required>
+  <input type="text" name="grade" placeholder="Enter Grade" required>
+  <input type="text" name="sec" placeholder="Enter Section" required>
   <button type="submit">Add Student</button>
 </form>
+
+<h3>Bulk Upload Students (CSV)</h3>
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <input type="file" name="csv_file" accept=".csv" required>
+  <button type="submit" name="upload_csv">Upload CSV</button>
+</form>
+
 
 <a href="{% url 'admin_dashboard' %}">Back to Dashboard</a>

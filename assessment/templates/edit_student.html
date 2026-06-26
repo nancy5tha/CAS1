@@ -1,0 +1,11 @@
+<h2>Edit Student</h2>
+<form method="post">
+  {% csrf_token %}
+  <input type="text" name="name" value="{{ student.name }}" required>
+  <input type="text" name="roll" value="{{ student.roll }}" required>
+  <input type="text" name="grade" value="{{ student.grade }}" required>
+  <input type="text" name="sec" value="{{ student.sec }}" required>
+  <button type="submit">Update Student</button>
+</form>
+
+<a href="{% url 'manage_students' %}">Back to Manage Students</a>

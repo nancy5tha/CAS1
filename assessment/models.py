@@ -1,10 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import User
+
+
 class AcademicYear(models.Model):
     year = models.CharField(max_length=9)  # e.g. "2026-2027"
 
     def __str__(self):
         return self.year
+
 
 class ExamTerm(models.Model):
     name = models.CharField(max_length=50)  # e.g. "Term 1", "Final"
@@ -12,6 +15,7 @@ class ExamTerm(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.year})"
+
 
 class Student(models.Model):
     name = models.CharField(max_length=100)
@@ -22,18 +26,21 @@ class Student(models.Model):
     def __str__(self):
         return f"{self.name} (Grade {self.grade}-{self.sec})"
 
+
 class Subject(models.Model):
     name = models.CharField(max_length=100)
+    grade = models.CharField(max_length=10, default="10")  # e.g. "1", "10", "12"
+    full_marks = models.IntegerField(default=100)
 
     def __str__(self):
-        return self.name
+        return f"{self.name} (Grade {self.grade})"
+
 
 class Assessment(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     term = models.ForeignKey(ExamTerm, on_delete=models.CASCADE)
     year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, default=1)
-
 
     project = models.IntegerField(default=0)
     classwork = models.IntegerField(default=0)
@@ -48,6 +55,7 @@ class Assessment(models.Model):
     def __str__(self):
         return f"{self.student} - {self.subject} ({self.term})"
 
+
 class Profile(models.Model):
     ROLE_CHOICES = [
         ("Admin", "Admin"),
@@ -58,3 +66,12 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} ({self.role})"
+
+
+class ClassSubject(models.Model):
+    grade = models.CharField(max_length=10)  # e.g. "1", "10", "12"
+    subject = models.ForeignKey("Subject", on_delete=models.CASCADE)
+    full_marks = models.IntegerField(default=25)  # or 100, depending on your scheme
+
+    def __str__(self):
+        return f"{self.grade} - {self.subject.name}"

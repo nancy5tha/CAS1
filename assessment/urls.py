@@ -20,6 +20,12 @@ urlpatterns = [
     path("manage-years/", views.manage_years, name="manage_years"),
     path("manage-terms/", views.manage_terms, name="manage_terms"),
     path("manage-students/", views.manage_students, name="manage_students"),
+    path("students/edit/<int:student_id>/", views.edit_student, name="edit_student"),
+    path("students/delete/<int:student_id>/", views.delete_student, name="delete_student"),
+    path("manage-subjects/", views.manage_subjects, name="manage_subjects"),
+    path("subjects/edit/<int:subject_id>/", views.edit_subject, name="edit_subject"),
+    path("subjects/delete/<int:subject_id>/", views.delete_subject, name="delete_subject"),
+
     # Teacher-only
     path("add-assessment/", views.add_assessment, name="add_assessment"),
     # Reports
@@ -35,4 +41,9 @@ urlpatterns = [
         views.class_report_card,
         name="class_report_card",
     ),
+   path(
+    "report-card/pdf/<int:term_id>/<str:grade>/<str:sec>/",
+    views.class_report_card_pdf,
+    name="class_report_card_pdf",
+),
 ]
