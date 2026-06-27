@@ -1,3 +1,8 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Subjects{% endblock %}
+
+{% block content %}
 <h2>Manage Subjects</h2>
 
 <table border="1" cellpadding="5" cellspacing="0">
@@ -47,3 +52,6 @@
 </form>
 
 <a href="{% url 'admin_dashboard' %}">Back to Dashboard</a>
+
+{% endblock %}  
+

@@ -1,3 +1,8 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Exam Terms{% endblock %}
+
+{% block content %}
 <h2>Manage Exam Terms</h2>
 <ul>
   {% for term in terms %}
@@ -18,3 +23,5 @@
 </form>
 
 <a href="{% url 'admin_dashboard' %}">Back to Dashboard</a>
+
+{% endblock %}
