@@ -347,8 +347,15 @@ def class_report_card_pdf(request, term_id, grade, sec):
         # Table header
         y = height - 140
         p.setFont("Helvetica-Bold", 9)
-        headers = ["S.N", "Subjects", "Full Marks", "MCQ", "Project/Viva", "CW/HW", "Discipline", "Total Marks"]
-        x_positions = [40, 70, 160, 210, 260, 310, 360, 420]
+
+        if grade in ["NINE", "TEN"]:
+            headers = ["S.N", "Subjects", "F.M", "MCQ", "Regs", "Acts", "Project", "Total"]
+            # Balanced spacing for 8 columns
+            x_positions = [40, 60, 140, 180, 220, 260, 300, 350]
+        else:
+            headers = ["S.N", "Subjects", "F.M", "MCQ", "Viva", "Regs", "Acts", "Project", "Total"]
+            # Balanced spacing for 9 columns
+            x_positions = [40, 60, 120, 160, 200, 240, 280, 320, 360]
         for i, header in enumerate(headers):
             p.drawString(x_positions[i], y, header)
         y -= 15
@@ -363,20 +370,34 @@ def class_report_card_pdf(request, term_id, grade, sec):
             viva = assessment.viva if assessment else 0
             hw = assessment.homework if assessment else 0
             discipline = assessment.classwork if assessment else 0
+            project = assessment.project if assessment else 0
             total = assessment.total if assessment else 0
 
-            row_data = [sn, subject.name, subject.full_marks, mcq, viva, hw, discipline, total]
+            if grade in ["NINE", "TEN"]:
+                row_data = [sn, subject.name, subject.full_marks, mcq, hw, discipline, project, total]
+            else:
+                row_data = [sn, subject.name, subject.full_marks, mcq, viva, hw, discipline, project, total]
             for i, val in enumerate(row_data):
                 p.drawString(x_positions[i], y, str(val))
+            # ✅ Horizontal line after each row
+            p.line(35, y - 2, width - 35, y - 2)    
             y -= 15
             sn += 1
 
-        # Signature section
-        p.line(35, y - 10, width - 35, y - 10)
+        # ✅ Fixed footer position
+        footer_y = 120   # distance from bottom of page
+
+        p.line(35, footer_y + 20, width - 35, footer_y + 20)
         p.setFont("Helvetica", 9)
-        p.drawString(50, y - 30, "Guardian Sign")
-        p.drawString(200, y - 30, "School Seal")
-        p.drawString(350, y - 30, "Class Teacher")
+
+        p.drawString(50, footer_y, "Guardian Sign")
+        p.drawString(width/2 - 30, footer_y, "School Seal")
+        p.drawString(width - 120, footer_y, "Class Teacher")
+        # ✅ Note line below signatures
+        note_y = footer_y - 15
+        p.setFont("Helvetica-Oblique", 8)   # italic small font
+        p.drawCentredString(width / 2, note_y, 
+            "Submit this report card duly signed by guardian.")
 
         p.showPage()
 

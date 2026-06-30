@@ -42,11 +42,11 @@ class Assessment(models.Model):
     term = models.ForeignKey(ExamTerm, on_delete=models.CASCADE)
     year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, default=1)
 
-    project = models.IntegerField(default=0)
-    classwork = models.IntegerField(default=0)
-    viva = models.IntegerField(default=0)
-    mcqs = models.IntegerField(default=0)
-    homework = models.IntegerField(default=0)
+    project = models.IntegerField(blank=True, null=True)
+    classwork = models.IntegerField(blank=True, null=True)
+    viva = models.IntegerField(blank=True, null=True)
+    mcqs = models.IntegerField(blank=True, null=True)
+    homework = models.IntegerField(blank=True, null=True)
 
     @property
     def total(self):
