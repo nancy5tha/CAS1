@@ -9,6 +9,8 @@ import csv
 from io import TextIOWrapper
 from django.core.paginator import Paginator
 from django.db.models import Q
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 
 def dashboard(request):
@@ -278,6 +280,9 @@ def add_assessment(request):
         }
     )
 
+# Register Algerian font 
+pdfmetrics.registerFont(TTFont("Algerian", "static/fonts/ALGER.TTF"))
+
 # ✅ Class report card
 @login_required
 def class_report_card(request, term_id, grade, sec, subject_id):
@@ -327,7 +332,7 @@ def class_report_card_pdf(request, term_id, grade, sec):
 
     for student in students:
         # Header
-        p.setFont("Helvetica-Bold", 12)
+        p.setFont("Algerian", 16)
         p.drawCentredString(width / 2, height - 40, "Ujjwal Shishu Niketan Academy")
         p.setFont("Helvetica", 9)
         p.drawCentredString(width / 2, height - 55, "Sahidpath, Panga, Kirtipur-5, Kathmandu")
@@ -338,22 +343,22 @@ def class_report_card_pdf(request, term_id, grade, sec):
         p.drawCentredString(width / 2, height - 98, "CAS (Continuous Assessment System)")
 
         # Student info
-        p.setFont("Helvetica", 9)
-        p.drawString(40, height - 120, f"Name: {student.name}")
-        p.drawString(200, height - 120, f"Grade: {grade}")
-        p.drawString(300, height - 120, f"Sec: {sec}")
-        p.drawString(350, height - 120, f"Roll No: {student.roll}")
+        p.setFont("Helvetica-Bold", 9)
+        p.drawString(40, height - 140, f"Name: {student.name}")
+        p.drawString(200, height - 140, f"Grade: {grade}")
+        p.drawString(300, height - 140, f"Sec: {sec}")
+        p.drawString(350, height - 140, f"Roll No: {student.roll}")
 
         # Table header
-        y = height - 140
+        y = height - 180
         p.setFont("Helvetica-Bold", 9)
 
         if grade in ["NINE", "TEN"]:
-            headers = ["S.N", "Subjects", "F.M", "MCQ", "Regs", "Acts", "Project", "Total"]
+            headers = ["S.N", "Subjects", "F.M", "MCQ", "Regular", "Activity", "Project", "Total"]
             # Balanced spacing for 8 columns
             x_positions = [40, 60, 140, 180, 220, 260, 300, 350]
         else:
-            headers = ["S.N", "Subjects", "F.M", "MCQ", "Viva", "Regs", "Acts", "Project", "Total"]
+            headers = ["S.N", "Subjects", "F.M", "MCQ", "Viva", "Regular", "Activity", "Project", "Total"]
             # Balanced spacing for 9 columns
             x_positions = [40, 60, 120, 160, 200, 240, 280, 320, 360]
         for i, header in enumerate(headers):
