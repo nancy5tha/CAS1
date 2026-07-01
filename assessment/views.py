@@ -364,7 +364,7 @@ def class_report_card_pdf(request, term_id, grade, sec):
         p.drawCentredString(width / 2, height - 68, "Phone No.: 4330300, 4333529")
         p.setFont("Helvetica-Bold", 10)
         p.drawCentredString(
-            width / 2, height - 85, f"{term.name} Examination - {term.year}"
+            width / 2, height - 85, f"{term.name} Assessment - {term.year}"
         )
         p.setFont("Helvetica", 9)
         p.drawCentredString(
@@ -388,8 +388,8 @@ def class_report_card_pdf(request, term_id, grade, sec):
                 "Subjects",
                 "F.M",
                 "MCQ",
-                "Regularity",
-                "Activities",
+                "Regul   arity",
+                "Activ   ities",
                 "Project",
                 "Total",
             ]
@@ -402,13 +402,13 @@ def class_report_card_pdf(request, term_id, grade, sec):
                 "F.M",
                 "MCQ",
                 "Viva",
-                "Regularity",
-                "Activities",
+                "Regul   arity",
+                "Activ   ities",
                 "Project",
                 "Total",
             ]
             # Balanced spacing for 9 columns
-            x_positions = [40, 70, 120, 160, 200, 240, 290, 330, 360]
+            x_positions = [40, 70, 120, 160, 200, 240, 280, 310, 360]
         # for i, header in enumerate(headers):
         #     p.drawString(x_positions[i], y, header)
         # y -= 15
